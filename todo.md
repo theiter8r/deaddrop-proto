@@ -14,13 +14,13 @@
   - Build async repo file tree walker to find target files (`swagger.json`, `openapi.yaml`, `*.postman_collection.json`)
   - Return a normalized list of matching file paths + raw content
 
-- [ ] **Card 3: Build File Parsing Engine** 🔄 IN PROGRESS
+- [x] **Card 3: Build File Parsing Engine** ✅ DONE
   - Parse OpenAPI/Swagger JSON & YAML → extract endpoints
   - Parse Postman Collection JSON → extract endpoints
   - Normalize all outputs to unified schema
   - Handle `deprecated` fields from OpenAPI spec → `is_deprecated`
 
-- [ ] **Card 4: Create Scanner Endpoints**
+- [ ] **Card 4: Create Scanner Endpoints** 🔄 IN PROGRESS
   - `POST /scan` — accepts repo URL + token, triggers full scan, persists to DB
   - `GET /endpoints` — returns all discovered endpoints from DB
   - Wire parsing engine into scan flow end-to-end
