@@ -20,12 +20,12 @@
   - Normalize all outputs to unified schema
   - Handle `deprecated` fields from OpenAPI spec → `is_deprecated`
 
-- [ ] **Card 4: Create Scanner Endpoints** 🔄 IN PROGRESS
+- [x] **Card 4: Create Scanner Endpoints** ✅ DONE
   - `POST /scan` — accepts repo URL + token, triggers full scan, persists to DB
   - `GET /endpoints` — returns all discovered endpoints from DB
   - Wire parsing engine into scan flow end-to-end
 
-- [ ] **Card 5: End-to-End Mock Testing**
+- [x] **Card 5: End-to-End Mock Testing** ✅ DONE
   - Write pytest tests using `httpx.AsyncClient` against a test DB
   - Test scan flow with fixture files (mock swagger/openapi/postman)
   - Validate DB persistence and API response schema
