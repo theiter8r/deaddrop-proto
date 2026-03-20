@@ -3,23 +3,29 @@ Card 4: Scanner Endpoints
 
 POST /scan   — trigger a full repo scan, persist results to DB
 GET  /endpoints — return all persisted endpoints
+
+Scan strategy (three passes):
+  Pass 1+2  discover_api_files()  — spec files by name then content-sniff
+  Pass 3    infer_endpoints()     — Claude AI inference from source code
+                                    (only runs when Pass 1+2 find nothing)
 """
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.discovery import discover_api_files
+from app.discovery import collect_source_files, discover_api_files
+from app.inference import infer_endpoints
 from app.models import Endpoint
 from app.parser import parse_all
-from app.schemas import EndpointRead, ScanRequest, ScanResponse
+from app.schemas import EndpointCreate, EndpointRead, ScanRequest, ScanResponse
 
 router = APIRouter()
 
 
 @router.post("/scan", response_model=ScanResponse)
 async def scan_repo(body: ScanRequest, db: AsyncSession = Depends(get_db)):
-    # 1. Discover spec files in the repo
+    # ── Pass 1 + 2: spec-file discovery ──────────────────────────────────────
     try:
         discovered = await discover_api_files(body.repo_url, body.token)
     except ValueError as exc:
@@ -27,17 +33,26 @@ async def scan_repo(body: ScanRequest, db: AsyncSession = Depends(get_db)):
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"Repo fetch failed: {exc}")
 
-    # 2. Parse all discovered files into normalized endpoints
-    parsed = parse_all(discovered)
+    parsed: list[EndpointCreate] = parse_all(discovered)
 
-    # 3. Persist to DB (upsert-style: delete old entries for this repo, insert fresh)
-    await db.execute(
-        Endpoint.__table__.delete().where(
-            Endpoint.source_file.in_([ep.source_file for ep in parsed])
+    # ── Pass 3: AI inference (only when spec files yield nothing) ─────────────
+    if not parsed:
+        try:
+            source_files = await collect_source_files(body.repo_url, body.token)
+            inferred = await infer_endpoints(source_files)
+            parsed = inferred
+        except Exception as exc:
+            # Inference failure is non-fatal — log and continue with empty result
+            import logging
+            logging.getLogger(__name__).warning("AI inference failed: %s", exc)
+
+    # ── Persist to DB ─────────────────────────────────────────────────────────
+    if parsed:
+        await db.execute(
+            Endpoint.__table__.delete().where(
+                Endpoint.source_file.in_({ep.source_file for ep in parsed})
+            )
         )
-        if parsed
-        else Endpoint.__table__.delete().where(False)  # no-op if nothing found
-    )
 
     db_endpoints: list[Endpoint] = []
     for ep in parsed:

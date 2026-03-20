@@ -1,0 +1,1043 @@
+openapi: "3.0.3"
+info:
+  title: CampX API
+  description: |
+    Campus marketplace API — buy, sell, and rent gear between verified college students.
+    All protected routes require a valid HTTP-only access token cookie (`accessToken`).
+  version: "1.0.0"
+
+servers:
+  - url: https://campx-server.up.railway.app
+    description: Production (Railway)
+  - url: http://localhost:3000
+    description: Local development
+
+tags:
+  - name: Auth
+  - name: Users
+  - name: Items
+  - name: Favorites
+  - name: Orders
+  - name: Payments
+  - name: Transactions
+  - name: Wallet
+  - name: Conversations
+  - name: Notifications
+  - name: Reviews
+  - name: Reports
+  - name: Verifications
+  - name: Categories
+  - name: Colleges
+  - name: Admin
+
+paths:
+
+  # ── Auth ──────────────────────────────────────────────────────────────────
+
+  /api/auth/register:
+    post:
+      tags: [Auth]
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password, fullName]
+              properties:
+                email:     { type: string, format: email }
+                password:  { type: string, minLength: 8, maxLength: 128 }
+                fullName:  { type: string, minLength: 2, maxLength: 100 }
+      responses:
+        "201": { description: User registered successfully }
+        "400": { description: Validation error }
+        "409": { description: Email already registered }
+
+  /api/auth/login:
+    post:
+      tags: [Auth]
+      summary: Log in and receive access + refresh token cookies
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:    { type: string, format: email }
+                password: { type: string }
+      responses:
+        "200": { description: Login successful, sets httpOnly cookies }
+        "401": { description: Invalid credentials }
+
+  /api/auth/logout:
+    post:
+      tags: [Auth]
+      summary: Log out and clear token cookies
+      responses:
+        "200": { description: Logged out }
+
+  /api/auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Refresh the access token using the refresh token cookie
+      responses:
+        "200": { description: New access token issued }
+        "401": { description: Invalid or expired refresh token }
+
+  /api/auth/verify-email/{token}:
+    get:
+      tags: [Auth]
+      summary: Verify email address via token link
+      parameters:
+        - in: path
+          name: token
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Email verified }
+        "400": { description: Invalid or expired token }
+
+  /api/auth/resend-verification:
+    post:
+      tags: [Auth]
+      summary: Resend the verification email
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email: { type: string, format: email }
+      responses:
+        "200": { description: Verification email sent }
+
+  /api/auth/forgot-password:
+    post:
+      tags: [Auth]
+      summary: Request a password reset email
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email: { type: string, format: email }
+      responses:
+        "200": { description: Reset email sent if account exists }
+
+  /api/auth/reset-password:
+    post:
+      tags: [Auth]
+      summary: Reset password using the token from the reset email
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token, password]
+              properties:
+                token:    { type: string }
+                password: { type: string, minLength: 8, maxLength: 128 }
+      responses:
+        "200": { description: Password reset successfully }
+        "400": { description: Invalid or expired token }
+
+  # ── Users ─────────────────────────────────────────────────────────────────
+
+  /api/users/me:
+    get:
+      tags: [Users]
+      summary: Get current authenticated user profile
+      security: [{ cookieAuth: [] }]
+      responses:
+        "200": { description: User profile with wallet summary }
+        "401": { description: Unauthorized }
+    put:
+      tags: [Users]
+      summary: Update current user profile
+      security: [{ cookieAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                fullName:   { type: string }
+                phone:      { type: string }
+                avatarUrl:  { type: string, format: uri }
+                notificationPreferences: { type: object }
+      responses:
+        "200": { description: Profile updated }
+
+  /api/users/me/onboarding:
+    post:
+      tags: [Users]
+      summary: Complete onboarding (college + phone)
+      security: [{ cookieAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [collegeId, phone]
+              properties:
+                collegeId: { type: string }
+                phone:     { type: string }
+      responses:
+        "200": { description: Onboarding complete }
+
+  /api/users/{id}:
+    get:
+      tags: [Users]
+      summary: Get public profile of a user
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Public user profile }
+        "404": { description: User not found }
+
+  /api/users/{id}/items:
+    get:
+      tags: [Users]
+      summary: Get public listings by a user
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+        - in: query
+          name: cursor
+          schema: { type: string }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 20 }
+      responses:
+        "200": { description: Paginated item list }
+
+  # ── Items ─────────────────────────────────────────────────────────────────
+
+  /api/items:
+    get:
+      tags: [Items]
+      summary: Browse items with filters and cursor pagination
+      parameters:
+        - in: query
+          name: cursor
+          schema: { type: string }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 20 }
+        - in: query
+          name: search
+          schema: { type: string }
+        - in: query
+          name: categoryId
+          schema: { type: string }
+        - in: query
+          name: collegeId
+          schema: { type: string }
+        - in: query
+          name: listingType
+          schema: { type: string, enum: [SELL, RENT, BOTH] }
+        - in: query
+          name: condition
+          schema: { type: string, enum: [NEW, LIKE_NEW, GOOD, FAIR] }
+        - in: query
+          name: minPrice
+          schema: { type: number }
+        - in: query
+          name: maxPrice
+          schema: { type: number }
+      responses:
+        "200": { description: Paginated item list with optional isFavorited flag }
+    post:
+      tags: [Items]
+      summary: Create a new listing
+      security: [{ cookieAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title, categoryId, collegeId, listingType, condition, images]
+              properties:
+                title:           { type: string }
+                description:     { type: string }
+                categoryId:      { type: string }
+                collegeId:       { type: string }
+                listingType:     { type: string, enum: [SELL, RENT, BOTH] }
+                condition:       { type: string, enum: [NEW, LIKE_NEW, GOOD, FAIR] }
+                images:          { type: array, items: { type: string, format: uri } }
+                sellPrice:       { type: number }
+                rentPricePerDay: { type: number }
+      responses:
+        "201": { description: Item created }
+        "403": { description: Verification required }
+
+  /api/items/{id}:
+    get:
+      tags: [Items]
+      summary: Get item details and increment view count
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Item detail with seller info and reviews }
+        "404": { description: Item not found }
+    put:
+      tags: [Items]
+      summary: Update a listing (seller only)
+      security: [{ cookieAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:           { type: string }
+                description:     { type: string }
+                condition:       { type: string }
+                sellPrice:       { type: number }
+                rentPricePerDay: { type: number }
+                images:          { type: array, items: { type: string } }
+                status:          { type: string, enum: [AVAILABLE, UNAVAILABLE] }
+      responses:
+        "200": { description: Item updated }
+        "403": { description: Not the seller }
+    delete:
+      tags: [Items]
+      summary: Delete a listing (seller only)
+      security: [{ cookieAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Item deleted }
+        "403": { description: Not the seller }
+
+  # ── Favorites ─────────────────────────────────────────────────────────────
+
+  /api/favorites:
+    get:
+      tags: [Favorites]
+      summary: List authenticated user's favorited items
+      security: [{ cookieAuth: [] }]
+      parameters:
+        - in: query
+          name: cursor
+          schema: { type: string }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 20 }
+      responses:
+        "200": { description: Paginated favorites }
+    post:
+      tags: [Favorites]
+      summary: Add an item to favorites
+      security: [{ cookieAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [itemId]
+              properties:
+                itemId: { type: string }
+      responses:
+        "201": { description: Added to favorites }
+        "409": { description: Already favorited }
+
+  /api/favorites/{itemId}:
+    delete:
+      tags: [Favorites]
+      summary: Remove an item from favorites
+      security: [{ cookieAuth: [] }]
+      parameters:
+        - in: path
+          name: itemId
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Removed from favorites }
+
+  # ── Orders ────────────────────────────────────────────────────────────────
+
+  /api/orders/create:
+    post:
+      tags: [Orders]
+      summary: Create a Razorpay order for purchase or rental
+      security: [{ cookieAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [itemId, type]
+              properties:
+                itemId:        { type: string }
+                type:          { type: string, enum: [BUY, RENT] }
+                rentStartDate: { type: string, format: date }
+                rentEndDate:   { type: string, format: date }
+      responses:
+        "200": { description: Razorpay order created }
+        "400": { description: Item unavailable or invalid dates }
+        "403": { description: Cannot purchase own listing }
+
+  # ── Payments ──────────────────────────────────────────────────────────────
+
+  /api/payments/verify:
+    post:
+      tags: [Payments]
+      summary: Verify Razorpay payment signature after checkout
+      security: [{ cookieAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [razorpayOrderId, razorpayPaymentId, razorpaySignature]
+              properties:
+                razorpayOrderId:   { type: string }
+                razorpayPaymentId: { type: string }
+                razorpaySignature: { type: string }
+      responses:
+        "200": { description: Payment verified, escrow held }
+        "400": { description: Invalid signature }
+
+  /api/payments/webhook:
+    post:
+      tags: [Payments]
+      summary: Razorpay webhook receiver
+      responses:
+        "200": { description: Webhook processed }
+
+  # ── Transactions ──────────────────────────────────────────────────────────
+
+  /api/transactions:
+    get:
+      tags: [Transactions]
+      summary: List current user's transactions (as buyer or seller)
+      security: [{ cookieAuth: [] }]
+      parameters:
+        - in: query
+          name: cursor
+          schema: { type: string }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 20 }
+        - in: query
+          name: role
+          schema: { type: string, enum: [buyer, seller] }
+      responses:
+        "200": { description: Paginated transaction list }
+
+  /api/transactions/{id}:
+    get:
+      tags: [Transactions]
+      summary: Get transaction detail
+      security: [{ cookieAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Transaction detail }
+        "403": { description: Not a party in this transaction }
+        "404": { description: Not found }
+
+  /api/transactions/{id}/confirm-receipt:
+    post:
+      tags: [Transactions]
+      summary: Buyer confirms item received — releases escrow to seller
+      security: [{ cookieAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Escrow released, transaction settled }
+
+  /api/transactions/{id}/confirm-return:
+    post:
+      tags: [Transactions]
+      summary: Seller confirms rental item returned
+      security: [{ cookieAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Rental closed, escrow released }
+
+  # ── Wallet ────────────────────────────────────────────────────────────────
+
+  /api/wallet:
+    get:
+      tags: [Wallet]
+      summary: Get current user's wallet balance
+      security: [{ cookieAuth: [] }]
+      responses:
+        "200": { description: Wallet balance and frozen balance }
+
+  /api/wallet/history:
+    get:
+      tags: [Wallet]
+      summary: Get paginated wallet transaction history
+      security: [{ cookieAuth: [] }]
+      parameters:
+        - in: query
+          name: cursor
+          schema: { type: string }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 20 }
+        - in: query
+          name: type
+          schema:
+            type: string
+            enum: [CREDIT_ESCROW, RELEASE_ESCROW, WITHDRAWAL, REFUND_DEBIT]
+      responses:
+        "200": { description: Paginated wallet history }
+
+  /api/wallet/withdraw:
+    post:
+      tags: [Wallet]
+      summary: Request a withdrawal from the wallet
+      security: [{ cookieAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amount]
+              properties:
+                amount: { type: number, minimum: 1 }
+      responses:
+        "200": { description: Withdrawal initiated }
+        "400": { description: Insufficient balance }
+
+  # ── Conversations ─────────────────────────────────────────────────────────
+
+  /api/conversations:
+    get:
+      tags: [Conversations]
+      summary: List current user's conversations
+      security: [{ cookieAuth: [] }]
+      responses:
+        "200": { description: Conversations with last message preview and unread count }
+
+  /api/conversations/{id}/messages:
+    get:
+      tags: [Conversations]
+      summary: Get messages in a conversation (cursor pagination)
+      security: [{ cookieAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+        - in: query
+          name: cursor
+          schema: { type: string }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 30 }
+      responses:
+        "200": { description: Paginated messages }
+        "403": { description: Not a participant }
+    post:
+      tags: [Conversations]
+      summary: Send a message in a conversation
+      security: [{ cookieAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [content]
+              properties:
+                type:    { type: string, enum: [TEXT, LOCATION, IMAGE], default: TEXT }
+                content: { type: string, maxLength: 5000 }
+      responses:
+        "201": { description: Message sent and published to Ably channel }
+
+  # ── Notifications ─────────────────────────────────────────────────────────
+
+  /api/notifications:
+    get:
+      tags: [Notifications]
+      summary: List current user's notifications
+      security: [{ cookieAuth: [] }]
+      parameters:
+        - in: query
+          name: cursor
+          schema: { type: string }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 20 }
+        - in: query
+          name: unreadOnly
+          schema: { type: boolean, default: false }
+      responses:
+        "200": { description: Paginated notifications }
+
+  /api/notifications/mark-read:
+    post:
+      tags: [Notifications]
+      summary: Mark notifications as read (all or by IDs)
+      security: [{ cookieAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: object
+                  properties:
+                    all: { type: boolean, enum: [true] }
+                - type: object
+                  properties:
+                    ids:
+                      type: array
+                      items: { type: string }
+                      minItems: 1
+                      maxItems: 100
+      responses:
+        "200": { description: Notifications marked as read }
+
+  # ── Reviews ───────────────────────────────────────────────────────────────
+
+  /api/reviews:
+    post:
+      tags: [Reviews]
+      summary: Submit a review for a settled transaction
+      security: [{ cookieAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [transactionId, rating]
+              properties:
+                transactionId: { type: string }
+                rating:        { type: integer, minimum: 1, maximum: 5 }
+                comment:       { type: string, maxLength: 1000 }
+      responses:
+        "201": { description: Review submitted }
+        "409": { description: Already reviewed this transaction }
+
+  /api/reviews/user/{userId}:
+    get:
+      tags: [Reviews]
+      summary: Get reviews for a user
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema: { type: string }
+        - in: query
+          name: cursor
+          schema: { type: string }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 20 }
+      responses:
+        "200": { description: Paginated reviews }
+
+  # ── Reports ───────────────────────────────────────────────────────────────
+
+  /api/reports:
+    post:
+      tags: [Reports]
+      summary: Submit a report against a user or item
+      security: [{ cookieAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reportedUserId:  { type: string }
+                reportedItemId:  { type: string }
+                reason:
+                  type: string
+                  enum: [SPAM, FAKE_LISTING, INAPPROPRIATE, SCAM, HARASSMENT, OTHER]
+                description: { type: string, maxLength: 1000 }
+      responses:
+        "201": { description: Report submitted }
+        "400": { description: Must specify user or item }
+        "409": { description: Duplicate pending report }
+
+  # ── Verifications ─────────────────────────────────────────────────────────
+
+  /api/verifications:
+    post:
+      tags: [Verifications]
+      summary: Submit college ID image for verification
+      security: [{ cookieAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [idCardImageUrl]
+              properties:
+                idCardImageUrl: { type: string, format: uri }
+      responses:
+        "201": { description: Verification submitted, status set to PENDING }
+        "409": { description: Existing pending verification }
+
+  /api/verifications/status:
+    get:
+      tags: [Verifications]
+      summary: Get current user's verification status
+      security: [{ cookieAuth: [] }]
+      responses:
+        "200": { description: Verification status }
+
+  # ── Categories ────────────────────────────────────────────────────────────
+
+  /api/categories:
+    get:
+      tags: [Categories]
+      summary: List all categories
+      responses:
+        "200": { description: All categories ordered by name }
+
+  # ── Colleges ──────────────────────────────────────────────────────────────
+
+  /api/colleges:
+    get:
+      tags: [Colleges]
+      summary: List all active colleges
+      responses:
+        "200": { description: Active colleges ordered by name }
+
+  /api/colleges/{slug}:
+    get:
+      tags: [Colleges]
+      summary: Get a college by slug
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: College detail }
+        "404": { description: College not found }
+
+  # ── Admin ─────────────────────────────────────────────────────────────────
+
+  /api/admin/stats:
+    get:
+      tags: [Admin]
+      summary: Dashboard stats (users, items, transactions, reports)
+      security: [{ cookieAuth: [] }]
+      responses:
+        "200": { description: Aggregate platform statistics }
+
+  /api/admin/users:
+    get:
+      tags: [Admin]
+      summary: List all users with search and pagination
+      security: [{ cookieAuth: [] }]
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 20 }
+        - in: query
+          name: search
+          schema: { type: string }
+      responses:
+        "200": { description: Paginated user list }
+
+  /api/admin/users/{id}/action:
+    post:
+      tags: [Admin]
+      summary: Ban, unban, or force-verify a user
+      security: [{ cookieAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [action]
+              properties:
+                action: { type: string, enum: [ban, unban, force_verify] }
+                reason: { type: string, maxLength: 500 }
+      responses:
+        "200": { description: Action applied }
+
+  /api/admin/verifications:
+    get:
+      tags: [Admin]
+      summary: List pending verification submissions
+      security: [{ cookieAuth: [] }]
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 20 }
+      responses:
+        "200": { description: Pending verifications }
+
+  /api/admin/verifications/{id}:
+    post:
+      tags: [Admin]
+      summary: Approve or reject a verification
+      security: [{ cookieAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:        { type: string, enum: [VERIFIED, REJECTED] }
+                reviewerNotes: { type: string, maxLength: 500 }
+      responses:
+        "200": { description: Verification reviewed }
+
+  /api/admin/reports:
+    get:
+      tags: [Admin]
+      summary: List open reports queue
+      security: [{ cookieAuth: [] }]
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 20 }
+      responses:
+        "200": { description: Reports list }
+
+  /api/admin/reports/{id}:
+    post:
+      tags: [Admin]
+      summary: Take action or dismiss a report
+      security: [{ cookieAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [action]
+              properties:
+                action:     { type: string, enum: [action_taken, dismissed] }
+                adminNotes: { type: string, maxLength: 500 }
+      responses:
+        "200": { description: Report resolved }
+
+  /api/admin/transactions:
+    get:
+      tags: [Admin]
+      summary: List all transactions with intervention controls
+      security: [{ cookieAuth: [] }]
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 20 }
+        - in: query
+          name: search
+          schema: { type: string }
+      responses:
+        "200": { description: Transaction list }
+
+  /api/admin/transactions/{id}/intervene:
+    post:
+      tags: [Admin]
+      summary: Admin force-refund or force-release escrow on a transaction
+      security: [{ cookieAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [action]
+              properties:
+                action:     { type: string, enum: [refund, release] }
+                adminNotes: { type: string, maxLength: 500 }
+      responses:
+        "200": { description: Intervention applied }
+
+  /api/admin/listings:
+    get:
+      tags: [Admin]
+      summary: List all item listings for moderation
+      security: [{ cookieAuth: [] }]
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 20 }
+        - in: query
+          name: search
+          schema: { type: string }
+      responses:
+        "200": { description: Listings list }
+
+  /api/admin/listings/{id}/moderate:
+    post:
+      tags: [Admin]
+      summary: Approve or remove a listing
+      security: [{ cookieAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [action]
+              properties:
+                action: { type: string, enum: [approve, remove] }
+                reason: { type: string }
+      responses:
+        "200": { description: Listing moderated }
+
+  /api/admin/colleges:
+    get:
+      tags: [Admin]
+      summary: List all colleges including inactive
+      security: [{ cookieAuth: [] }]
+      responses:
+        "200": { description: All colleges }
+    post:
+      tags: [Admin]
+      summary: Create a new college
+      security: [{ cookieAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, slug, emailDomain, city, state]
+              properties:
+                name:        { type: string, minLength: 2, maxLength: 100 }
+                slug:        { type: string, pattern: "^[a-z0-9-]+$" }
+                emailDomain: { type: string }
+                city:        { type: string }
+                state:       { type: string }
+                campusLat:   { type: number }
+                campusLng:   { type: number }
+                logoUrl:     { type: string, format: uri }
+      responses:
+        "201": { description: College created }
+
+  /api/admin/colleges/{id}:
+    put:
+      tags: [Admin]
+      summary: Update a college
+      security: [{ cookieAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        "200": { description: College updated }
+    delete:
+      tags: [Admin]
+      summary: Deactivate a college
+      security: [{ cookieAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: College deactivated }
+
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: accessToken

@@ -34,17 +34,17 @@
 
 ## Sprint: Layer 4 — Security Dashboard Frontend
 
-- [ ] **Card F1: Next.js Project Setup** 🔄 IN PROGRESS
+- [x] **Card F1: Next.js Project Setup** ✅ DONE
   - Initialize Next.js 14 with TypeScript + Tailwind CSS
   - Configure static export (`output: 'export'`)
   - Set up custom design tokens and global styles
 
-- [ ] **Card F2: Dashboard UI — Scan Form & Endpoint Table**
+- [x] **Card F2: Dashboard UI — Scan Form & Endpoint Table** ✅ DONE
   - `ScanForm` — POST /scan with repo URL + token, loading/error states
   - `EndpointsTable` — columns: METHOD, PATH, SOURCE, STATUS, ACTION
   - `StatusBadge` — Active (green) / Zombie (red) / Shadow (amber) visual tags
   - Status filter tabs (ALL / ACTIVE / ZOMBIE)
 
-- [ ] **Card F3: Docker & Nginx**
+- [x] **Card F3: Docker & Nginx** ✅ DONE
   - `nginx.conf` for serving static Next.js export
   - `Dockerfile` (linux/amd64) with Nginx
