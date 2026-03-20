@@ -1,0 +1,180 @@
+@import url('https://fonts.googleapis.com/css2?family=Michroma&family=Share+Tech+Mono&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --scanline-opacity: 0.03;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  background-color: #080c10;
+  color: #c4d4e0;
+  font-family: 'Share Tech Mono', monospace;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Scanline overlay */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, var(--scanline-opacity)) 2px,
+    rgba(0, 0, 0, var(--scanline-opacity)) 4px
+  );
+  pointer-events: none;
+  z-index: 999;
+}
+
+/* Moving scan beam */
+body::after {
+  content: '';
+  position: fixed;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(0, 255, 157, 0.06),
+    rgba(0, 255, 157, 0.12),
+    rgba(0, 255, 157, 0.06),
+    transparent
+  );
+  animation: scan 8s linear infinite;
+  pointer-events: none;
+  z-index: 998;
+}
+
+/* Grid background */
+.grid-bg {
+  background-image:
+    linear-gradient(rgba(0, 255, 157, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 255, 157, 0.025) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+/* Corner bracket decorations */
+.bracket::before,
+.bracket::after {
+  content: '';
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-color: rgba(0, 255, 157, 0.4);
+  border-style: solid;
+}
+.bracket::before {
+  top: -1px;
+  left: -1px;
+  border-width: 1px 0 0 1px;
+}
+.bracket::after {
+  bottom: -1px;
+  right: -1px;
+  border-width: 0 1px 1px 0;
+}
+
+/* Table row stagger animation */
+@keyframes rowReveal {
+  from {
+    opacity: 0;
+    transform: translateX(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+.row-animate {
+  animation: rowReveal 0.3s ease forwards;
+  opacity: 0;
+}
+
+/* Spinner */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.spinner {
+  border: 2px solid rgba(0, 255, 157, 0.15);
+  border-top-color: #00ff9d;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #080c10; }
+::-webkit-scrollbar-thumb { background: #1a2d42; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #1e3d5a; }
+
+/* Input focus glow */
+.input-ops {
+  background: #0d1520;
+  border: 1px solid #1a2d42;
+  color: #c4d4e0;
+  font-family: 'Share Tech Mono', monospace;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  outline: none;
+}
+.input-ops:focus {
+  border-color: rgba(0, 255, 157, 0.5);
+  box-shadow: 0 0 0 1px rgba(0, 255, 157, 0.15), 0 0 16px rgba(0, 255, 157, 0.08);
+}
+.input-ops::placeholder {
+  color: #2a4158;
+}
+
+/* Glowing submit button */
+.btn-primary {
+  background: transparent;
+  border: 1px solid rgba(0, 255, 157, 0.5);
+  color: #00ff9d;
+  font-family: 'Michroma', monospace;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+.btn-primary::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 255, 157, 0.05);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.btn-primary:hover:not(:disabled)::before {
+  opacity: 1;
+}
+.btn-primary:hover:not(:disabled) {
+  border-color: #00ff9d;
+  box-shadow: 0 0 16px rgba(0, 255, 157, 0.25), inset 0 0 16px rgba(0, 255, 157, 0.05);
+}
+.btn-primary:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Decommission button */
+.btn-decom {
+  border: 1px solid rgba(255, 59, 92, 0.25);
+  color: rgba(255, 59, 92, 0.4);
+  font-family: 'Michroma', monospace;
+  letter-spacing: 0.08em;
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  transition: all 0.2s;
+  cursor: not-allowed;
+}
