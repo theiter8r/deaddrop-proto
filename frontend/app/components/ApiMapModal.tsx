@@ -223,7 +223,123 @@ function TreemapView({ groups }: { groups: Group[] }) {
   )
 }
 
-// placeholder export — replaced in Task 4
-export default function ApiMapModal(_: { endpoints: Endpoint[]; onClose: () => void }) {
-  return null
+// ─── Modal ────────────────────────────────────────────────────────────────────
+
+export default function ApiMapModal({ endpoints, onClose }: { endpoints: Endpoint[]; onClose: () => void }) {
+  const [view, setView] = useState<'tree' | 'treemap'>('tree')
+
+  const root = useMemo(() => buildTree(endpoints), [endpoints])
+  const groups = useMemo(() => buildGroups(endpoints), [endpoints])
+
+  const [collapsed, setCollapsed] = useState<Set<string>>(() => {
+    const s = new Set<string>()
+    collectDeepKeys(root, s)
+    return s
+  })
+
+  // Re-seed collapsed keys when endpoints change (e.g. new scan while modal is open)
+  useEffect(() => {
+    const s = new Set<string>()
+    collectDeepKeys(root, s)
+    setCollapsed(s)
+  }, [root])
+
+  function toggle(key: string) {
+    setCollapsed(prev => {
+      const next = new Set(prev)
+      next.has(key) ? next.delete(key) : next.add(key)
+      return next
+    })
+  }
+
+  // Escape to close
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
+
+  const activeCt = endpoints.filter(e => !e.is_deprecated).length
+  const zombieCt = endpoints.filter(e => e.is_deprecated).length
+
+  return (
+    <div
+      className="fixed inset-0 z-[90] flex items-center justify-center bg-black/70 backdrop-blur-sm"
+      onClick={e => { if (e.target === e.currentTarget) onClose() }}
+    >
+      <div className="relative w-full max-w-3xl mx-4 bg-ops-card border border-signal-green/30 rounded-sm shadow-glow-green flex flex-col max-h-[85vh]">
+
+        {/* Corner accents */}
+        <div className="absolute top-0 left-0 w-4 h-4 border-t border-l border-signal-green/50 pointer-events-none" />
+        <div className="absolute top-0 right-0 w-4 h-4 border-t border-r border-signal-green/50 pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-4 h-4 border-b border-l border-signal-green/50 pointer-events-none" />
+        <div className="absolute bottom-0 right-0 w-4 h-4 border-b border-r border-signal-green/50 pointer-events-none" />
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-3 border-b border-ops-border flex-shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="w-1 h-5 bg-signal-green shadow-glow-green" />
+            <span className="font-display text-xs tracking-[0.25em] text-signal-green uppercase">API Structure Map</span>
+            <span className="text-[9px] tracking-widest text-ops-dim font-display">
+              // {endpoints.length} ENDPOINTS · {groups.length} GROUPS
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            {/* Toggle */}
+            <div className="flex items-center border border-ops-border rounded-sm overflow-hidden">
+              {(['tree', 'treemap'] as const).map(v => (
+                <button
+                  key={v}
+                  onClick={() => setView(v)}
+                  className={`px-3 py-1.5 text-[9px] font-display tracking-widest uppercase transition-all ${
+                    view === v
+                      ? 'bg-signal-green-dim text-signal-green border-r border-ops-border'
+                      : 'text-ops-dim hover:text-ops-text border-r border-ops-border last:border-r-0'
+                  }`}
+                >
+                  {v === 'tree' ? '⊞ TREE' : '▦ TREEMAP'}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={onClose}
+              className="w-7 h-7 flex items-center justify-center border border-ops-border rounded-sm text-ops-dim hover:text-ops-text hover:border-ops-border-bright transition-all text-xs font-display"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+
+        {/* Body */}
+        <div className="flex-1 overflow-hidden p-5">
+          {view === 'tree'
+            ? <TreeView root={root} collapsed={collapsed} onToggle={toggle} />
+            : <TreemapView groups={groups} />
+          }
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center gap-5 px-5 py-2.5 border-t border-ops-border bg-ops-surface/40 flex-shrink-0">
+          <div className="flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-signal-green" />
+            <span className="text-[9px] tracking-widest font-display text-ops-dim">ACTIVE</span>
+            <span className="text-[9px] tracking-widest font-display text-signal-green">{activeCt}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-signal-red" />
+            <span className="text-[9px] tracking-widest font-display text-ops-dim">ZOMBIE</span>
+            <span className="text-[9px] tracking-widest font-display text-signal-red">{zombieCt}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-signal-amber" />
+            <span className="text-[9px] tracking-widest font-display text-ops-dim">SHADOW</span>
+            <span className="text-[9px] tracking-widest font-display text-ops-dim">0</span>
+          </div>
+          <div className="ml-auto text-[9px] tracking-widest font-display text-ops-faint">
+            ESC TO CLOSE
+          </div>
+        </div>
+      </div>
+    </div>
+  )
 }
