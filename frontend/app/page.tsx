@@ -4,11 +4,14 @@ import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import ScanForm from './components/ScanForm'
 import EndpointsTable, { Endpoint } from './components/EndpointsTable'
+import DemoBanner from './components/DemoBanner'
+import ApiMapModal from './components/ApiMapModal'
 
 export default function DashboardPage() {
   const [endpoints, setEndpoints] = useState<Endpoint[]>([])
   const [tableLoading, setTableLoading] = useState(true)
   const [apiOnline, setApiOnline] = useState<boolean | null>(null)
+  const [showMap, setShowMap] = useState(false)
 
   const apiBase = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
 
@@ -41,6 +44,7 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <DemoBanner />
       {/* ── Top bar ─────────────────────────────────────── */}
       <header className="border-b border-ops-border bg-ops-surface/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="max-w-screen-xl mx-auto px-6 py-3 flex items-center justify-between">
@@ -160,6 +164,13 @@ export default function DashboardPage() {
               </div>
               <div className="flex-1 h-px bg-ops-border" />
               <button
+                onClick={() => setShowMap(true)}
+                className="flex items-center gap-2 text-[10px] tracking-widest font-display text-ops-dim hover:text-ops-text border border-ops-border hover:border-ops-border-bright px-3 py-1.5 rounded-sm transition-all"
+              >
+                <MapIcon />
+                <span>MAP</span>
+              </button>
+              <button
                 onClick={fetchEndpoints}
                 disabled={tableLoading}
                 className="flex items-center gap-2 text-[10px] tracking-widest font-display text-ops-dim hover:text-ops-text border border-ops-border hover:border-ops-border-bright px-3 py-1.5 rounded-sm transition-all disabled:opacity-40"
@@ -187,7 +198,19 @@ export default function DashboardPage() {
           </span>
         </div>
       </footer>
+      {showMap && (
+        <ApiMapModal endpoints={endpoints} onClose={() => setShowMap(false)} />
+      )}
     </div>
+  )
+}
+
+function MapIcon() {
+  return (
+    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+        d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+    </svg>
   )
 }
 
