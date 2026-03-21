@@ -13,7 +13,7 @@ const METHOD_CONFIG: Record<string, string> = {
 export default function MethodBadge({ method }: { method: string }) {
   const classes = METHOD_CONFIG[method.toUpperCase()] ?? 'border border-ops-border text-ops-dim'
   return (
-    <span className={`inline-block px-2 py-0.5 rounded-sm text-[10px] tracking-widest font-display min-w-[52px] text-center ${classes}`}>
+    <span className={`inline-block px-2 py-0.5 rounded-sm text-[10px] tracking-widest font-display min-w-[64px] text-center ${classes}`}>
       {method.toUpperCase()}
     </span>
   )
