@@ -166,6 +166,63 @@ function TreeView({ root, collapsed, onToggle }: { root: TreeNode; collapsed: Se
   )
 }
 
+// ─── Treemap view ─────────────────────────────────────────────────────────────
+
+const PALETTE = [
+  { border: 'border-signal-green/40', bg: 'bg-signal-green-dim', text: 'text-signal-green' },
+  { border: 'border-signal-blue/40',  bg: 'bg-signal-blue-dim',  text: 'text-signal-blue'  },
+  { border: 'border-signal-amber/40', bg: 'bg-signal-amber-dim', text: 'text-signal-amber' },
+  { border: 'border-signal-red/40',   bg: 'bg-signal-red-dim',   text: 'text-signal-red'   },
+  { border: 'border-signal-purple/40',bg: 'bg-signal-purple-dim',text: 'text-signal-purple' },
+]
+
+function formatSources(sources: string[]): string {
+  if (sources.length <= 2) return sources.join(' · ')
+  return `${sources.slice(0, 2).join(' · ')} +${sources.length - 2} more`
+}
+
+function TreemapView({ groups }: { groups: Group[] }) {
+  if (groups.length === 0) return (
+    <div className="flex items-center justify-center h-full text-ops-dim text-[11px] font-display tracking-widest">
+      NO ENDPOINTS DISCOVERED — RUN A SCAN FIRST
+    </div>
+  )
+
+  return (
+    <div className="overflow-y-auto h-full">
+      <p className="text-[9px] tracking-[0.2em] text-ops-dim font-display uppercase mb-3">
+        Top-level path groups · sized by endpoint count
+      </p>
+      <div className="grid grid-cols-2 gap-1">
+        {groups.map((group, i) => {
+          const palette = PALETTE[group.colorIndex]
+          const isLargest = i === 0
+          return (
+            <div
+              key={group.key}
+              className={`rounded-sm border p-3 flex flex-col justify-between h-24 hover:brightness-110 transition-all ${palette.bg} ${palette.border}`}
+              style={isLargest ? { gridRow: 'span 2', height: 'auto', minHeight: '10rem' } : undefined}
+            >
+              <div>
+                <div className={`text-[11px] font-mono truncate ${palette.text}`}>{group.key}</div>
+                <div className="text-[9px] text-ops-dim mt-1 truncate">
+                  {formatSources(group.sources)}
+                </div>
+              </div>
+              <div className="flex items-end justify-between mt-2">
+                <span className="text-3xl font-display opacity-20">{group.count}</span>
+                <div className="flex flex-wrap gap-1 justify-end">
+                  {group.methods.map(m => <MethodBadge key={m} method={m} />)}
+                </div>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 // placeholder export — replaced in Task 4
 export default function ApiMapModal(_: { endpoints: Endpoint[]; onClose: () => void }) {
   return null
