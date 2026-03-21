@@ -91,7 +91,82 @@ function buildGroups(endpoints: Endpoint[]): Group[] {
   })
 }
 
-// placeholder export so file is valid — replaced in later tasks
+// ─── Tree view ────────────────────────────────────────────────────────────────
+
+function TreeNodeView({
+  node,
+  collapsed,
+  onToggle,
+}: {
+  node: TreeNode
+  collapsed: Set<string>
+  onToggle: (key: string) => void
+}) {
+  const isCollapsed = collapsed.has(node.key)
+  const hasChildren = node.children.size > 0
+  const childCount = countEndpoints(node)
+
+  return (
+    <div>
+      {/* Internal node row */}
+      {node.depth > 0 && (
+        <div
+          className="flex items-center gap-2 px-2 py-1 rounded-sm hover:bg-white/[0.03] cursor-pointer group"
+          onClick={() => hasChildren && onToggle(node.key)}
+        >
+          <span className="text-ops-dim text-[10px] w-3 flex-shrink-0">
+            {hasChildren ? (isCollapsed ? '▶' : '▼') : ''}
+          </span>
+          <span className="text-ops-text text-xs font-mono truncate max-w-xs group-hover:text-signal-green transition-colors">
+            /{node.segment}
+          </span>
+          {hasChildren && (
+            <span className="ml-auto text-[9px] font-display tracking-widest text-ops-dim bg-ops-surface border border-ops-border px-1.5 py-0.5 rounded-sm flex-shrink-0">
+              {childCount}
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* Leaf method rows */}
+      {node.endpoints.map((method, i) => (
+        <div key={`${node.key}-${method}-${i}`} className="flex items-center gap-2 px-2 py-0.5 pl-7">
+          <MethodBadge method={method} />
+          <span className="text-[11px] text-ops-dim font-mono truncate max-w-xs">{node.key}</span>
+        </div>
+      ))}
+
+      {/* Children */}
+      {!isCollapsed && hasChildren && (
+        <div className="ml-3 border-l border-ops-border/40 pl-2">
+          {[...node.children.values()].map(child => (
+            <TreeNodeView key={child.key} node={child} collapsed={collapsed} onToggle={onToggle} />
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function TreeView({ root, collapsed, onToggle }: { root: TreeNode; collapsed: Set<string>; onToggle: (key: string) => void }) {
+  const hasContent = root.children.size > 0
+
+  if (!hasContent) return (
+    <div className="flex items-center justify-center h-full text-ops-dim text-[11px] font-display tracking-widest">
+      NO ENDPOINTS DISCOVERED — RUN A SCAN FIRST
+    </div>
+  )
+
+  return (
+    <div className="overflow-y-auto h-full pr-1">
+      {[...root.children.values()].map(child => (
+        <TreeNodeView key={child.key} node={child} collapsed={collapsed} onToggle={onToggle} />
+      ))}
+    </div>
+  )
+}
+
+// placeholder export — replaced in Task 4
 export default function ApiMapModal(_: { endpoints: Endpoint[]; onClose: () => void }) {
   return null
 }
