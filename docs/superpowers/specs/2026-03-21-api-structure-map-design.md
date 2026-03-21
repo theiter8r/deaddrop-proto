@@ -15,72 +15,87 @@ Add an "API Structure Map" modal to the DEADDROP dashboard. It visualizes all di
 - A **"MAP" button** appears in the "Discovered Endpoints" section header (next to the existing REFRESH button).
 - Clicking it opens a **full-screen overlay modal**.
 - The modal has a **TREE / TREEMAP toggle** in the header to switch views.
-- A **close button (✕)** dismisses the modal.
+- A **close button (✕)** dismisses the modal. Pressing `Escape` also closes it.
 - The modal renders entirely from the `endpoints` array already loaded in `page.tsx` — no extra API calls.
+- If `endpoints` is empty, both views show a centered empty state: `NO ENDPOINTS DISCOVERED — RUN A SCAN FIRST`.
 
 ---
 
 ## Component Design
 
 ### `ApiMapModal.tsx`
-Single new component. Receives `endpoints: Endpoint[]` and `onClose: () => void` as props.
+Single new component. Props: `endpoints: Endpoint[]`, `onClose: () => void`.
 
 **Internal state:**
 - `view: 'tree' | 'treemap'` — which visualization is active (default: `'tree'`)
+- `collapsed: Set<string>` — set of node path keys that are collapsed in tree view
 
 **Sections:**
 - **Header** — title (`API STRUCTURE MAP`), total endpoint + group counts, TREE/TREEMAP toggle, close button
-- **Body** — conditionally renders `<TreeView>` or `<TreemapView>` based on `view`
-- **Footer** — Active / Zombie / Shadow summary counts
+- **Body** — conditionally renders tree or treemap based on `view`
+- **Footer** — Active / Zombie / Shadow counts. SHADOW will always be `0` in the current layer (Layer 2 runtime detection is not yet implemented); it is displayed for structural completeness.
 
-### Tree View (internal)
+**Keyboard handling:** An effect registers a `keydown` listener on mount that calls `onClose` on `Escape` and removes the listener on unmount.
+
+---
+
+### Tree View
+
 Built from scratch in React — no third-party library.
 
-**Path parsing logic:**
-- Split each `endpoint_path` on `/` to get segments (e.g. `/api/v1/users/{id}` → `['api', 'v1', 'users', '{id}']`)
-- Build a nested object tree grouping endpoints by segment
-- Each internal node stores: `segment`, `children`, `endpoints[]` (leaf-level HTTP methods)
-- Each leaf stores: `http_method`, `is_deprecated`
+**Path parsing (`buildTree`):**
+- Split each `endpoint_path` on `/`, filter empty strings to get segments
+- Build a nested plain-object tree where each internal node stores: `key` (full path to this node), `segment` (label), `depth: number`, `children: Map<string, Node>`, `endpoints[]` (HTTP methods at this exact path). Root's direct children (first path segment) are depth 1. Both the collapsed-set seed walk and the `TreeNode` renderer use this `depth` field — "depth > 2" means depth-1 and depth-2 nodes are expanded, depth-3+ are collapsed.
+- Return the root node
 
 **Rendering:**
 - Recursive `TreeNode` sub-component
-- Internal nodes show: toggle arrow (▼/▶), path segment, endpoint count badge
-- Leaf nodes show: method chip (colored GET/POST/PUT/DEL/PATCH), path segment (dimmed)
-- Nodes are expanded by default for the first 2 levels, collapsed beyond that
-- Click on any internal node toggles expand/collapse (local state per node via a `Set<string>` of collapsed paths)
+- Internal nodes: toggle arrow (▼/▶), path segment, child endpoint count badge
+- Leaf nodes (HTTP method entries): method chip + dimmed path segment
+- First 2 levels expanded by default; deeper nodes collapsed
+- **Collapsed state:** stored as `Set<string>` in `useState`. After `buildTree` returns, walk all nodes and collect keys where `depth > 2` to seed the initial `Set` (pass as the argument to `useState`). Updates MUST produce a new `Set` instance to trigger re-render:
+  ```ts
+  setCollapsed(prev => { const next = new Set(prev); next.add(key); return next })
+  ```
+- **Overflow:** tree node labels use `truncate` with `max-w-xs` to prevent overflow on long paths
 
-### Treemap View (internal)
+**Method chip rendering** — reuse the existing `<MethodBadge method={...} />` component directly for both tree leaf nodes and treemap cells. Do not reimplement the color map. This ensures HEAD, OPTIONS, and any future methods are handled automatically with correct fallback styling.
+
+---
+
+### Treemap View
+
 Pure CSS grid — no D3 or charting library.
 
-**Grouping logic:**
-- Group endpoints by their **first two path segments** (e.g. `/api/v1/users/...` → group key `/api/v1/users`)
-- Sort groups by endpoint count descending
-- Assign each group a color from a fixed palette (green, blue, amber, red, purple, cycling)
+**Grouping (`buildGroups`):**
+- Group endpoints by their **first three non-empty path segments** (e.g. `/api/v1/users/{id}` → group key `/api/v1/users`). If an endpoint has fewer than 3 segments, use all available segments.
+- Sort groups by endpoint count descending.
+- Assign each group a color from a fixed 5-color palette cycling: green → blue → amber → red → purple.
+- For each group, deduplicate `source_file` values across all endpoints in the group. Display up to 2 file names; if more, show `+N more`.
 
 **Rendering:**
-- CSS grid with `grid-template-columns` weighted by relative group sizes (approximated to a 2-column layout)
-- Each cell shows: group path, source file(s), endpoint count (large dimmed number), method chips
-- Hover brightens the cell (`filter: brightness(1.2)`)
-- Largest group spans 2 rows to reflect its weight visually
+- Fixed 2-column CSS grid using Tailwind `grid grid-cols-2`.
+- Cell height is fixed (`h-24` for smaller groups, `h-36` via `row-span-2` inline style for the largest group).
+- **The largest group (index 0 after sort) gets `style={{ gridRow: 'span 2' }}`** — this requires a single inline style and is explicitly permitted as an exception to the Tailwind-only rule, since dynamic `fr` values and `row-span` values cannot be generated by Tailwind at runtime.
+- Each cell shows: group path (truncated), source files, large dimmed endpoint count, method chips.
+- Hover: `hover:brightness-110` filter via Tailwind.
 
 ---
 
 ## Integration into `page.tsx`
 
 - Add `showMap: boolean` state (default `false`)
-- Render `<ApiMapModal>` conditionally when `showMap` is true
-- Add a **MAP button** to the "Discovered Endpoints" section header (alongside the REFRESH button)
-- Pass `endpoints` and `onClose={() => setShowMap(false)}` to the modal
+- Render `<ApiMapModal>` conditionally when `showMap` is true, passing `endpoints` and `onClose`
+- Add a **MAP button** to the "Discovered Endpoints" section header alongside REFRESH, using the same `border border-ops-border` style
 
 ---
 
 ## Styling
 
-Follows existing design system strictly:
+Follows existing design system:
 - `bg-ops-card`, `border-ops-border`, `font-display`, `tracking-widest` — same tokens as the rest of the dashboard
-- Method chip colors: GET=blue, POST=green, PUT=amber, DEL=red, PATCH=purple
-- `signal-green` accent for the modal border/glow (same as `DemoBanner`)
-- No new CSS — Tailwind only
+- `signal-green` accent for the modal border/glow (matching `DemoBanner`)
+- Tailwind only, **except** one inline `style={{ gridRow: 'span 2' }}` on the largest treemap cell (documented above)
 
 ---
 
@@ -88,13 +103,23 @@ Follows existing design system strictly:
 
 ```
 page.tsx
-  └─ endpoints: Endpoint[]  (already fetched)
+  └─ endpoints: Endpoint[]  (already fetched, no new network requests)
        └─ ApiMapModal
-            ├─ buildTree(endpoints) → nested node structure
-            └─ buildGroups(endpoints) → flat group array
+            ├─ buildTree(endpoints)   → nested node tree  → <TreeView>
+            └─ buildGroups(endpoints) → flat sorted array  → <TreemapView>
 ```
 
-No new network requests. The modal derives all data client-side from the existing endpoint list.
+---
+
+## Edge Cases
+
+| Case | Handling |
+|------|----------|
+| `endpoints` is empty | Centered empty state message in modal body |
+| Single endpoint | Tree shows one leaf; treemap shows one cell in the two-column grid |
+| Path with < 3 segments (e.g. `/health`) | Uses all available segments as the group key |
+| Very long path segment | `truncate` applied to node labels and cell text |
+| Group has multiple source files | Dedup + display up to 2, then `+N more` |
 
 ---
 
@@ -104,3 +129,4 @@ No new network requests. The modal derives all data client-side from the existin
 - No search/filter within the modal
 - No export or share functionality
 - No animation between tree ↔ treemap transitions (instant swap is fine)
+- Focus trapping within the modal (prototype scope)
