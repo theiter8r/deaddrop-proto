@@ -48,3 +48,10 @@
 - [x] **Card F3: Docker & Nginx** ✅ DONE
   - `nginx.conf` for serving static Next.js export
   - `Dockerfile` (linux/amd64) with Nginx
+
+- [x] **Card F4: API Structure Map Modal** ✅ DONE
+  - `ApiMapModal` — tree + treemap toggle modal triggered from endpoints header
+  - `buildTree` — path-segment tree with depth tracking, expand/collapse
+  - `buildGroups` — first-3-segment grouping, count sort, color palette
+  - Escape / backdrop / ✕ close handlers
+  - Empty state, long-path truncation, source file dedup
