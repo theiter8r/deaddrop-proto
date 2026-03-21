@@ -18,11 +18,16 @@ interface Group {
   key: string        // group path key, e.g. "/api/v1/users"
   count: number
   methods: string[]  // deduplicated
-  sources: string[]  // deduplicated, up to 2 + overflow
+  sources: string[]  // all deduplicated source files (render layer handles display truncation)
   colorIndex: number
 }
 
 // ─── Data transforms ──────────────────────────────────────────────────────────
+
+/** Nodes deeper than this level start collapsed in the tree view. Root children are depth 1. */
+const COLLAPSE_DEPTH = 2
+/** Number of distinct colours in the treemap group palette. */
+const GROUP_COLOR_COUNT = 5
 
 function buildTree(endpoints: Endpoint[]): TreeNode {
   const root: TreeNode = { key: '', segment: '', depth: 0, children: new Map(), endpoints: [] }
@@ -54,15 +59,15 @@ function buildTree(endpoints: Endpoint[]): TreeNode {
 }
 
 function collectDeepKeys(node: TreeNode, acc: Set<string>) {
-  for (const child of Array.from(node.children.values())) {
-    if (child.depth > 2) acc.add(child.key)
+  for (const child of node.children.values()) {
+    if (child.depth > COLLAPSE_DEPTH) acc.add(child.key)
     collectDeepKeys(child, acc)
   }
 }
 
 function countEndpoints(node: TreeNode): number {
   let n = node.endpoints.length
-  for (const child of Array.from(node.children.values())) n += countEndpoints(child)
+  for (const child of node.children.values()) n += countEndpoints(child)
   return n
 }
 
@@ -82,11 +87,7 @@ function buildGroups(endpoints: Endpoint[]): Group[] {
   const sorted = Array.from(map.entries()).sort((a, b) => b[1].count - a[1].count)
 
   return sorted.map(([key, val], i) => {
-    const srcArr = [...val.sources]
-    const sources = srcArr.length > 2
-      ? [...srcArr.slice(0, 2), `+${srcArr.length - 2} more`]
-      : srcArr
-    return { key, count: val.count, methods: [...val.methods], sources, colorIndex: i % 5 }
+    return { key, count: val.count, methods: [...val.methods], sources: Array.from(val.sources), colorIndex: i % GROUP_COLOR_COUNT }
   })
 }
 
