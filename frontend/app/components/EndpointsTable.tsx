@@ -68,7 +68,7 @@ export default function EndpointsTable({ endpoints, loading }: EndpointsTablePro
       {/* Table */}
       <div className="relative border border-ops-border rounded-sm overflow-hidden">
         {/* Header */}
-        <div className="grid grid-cols-[80px_1fr_180px_100px_90px] gap-0 border-b border-ops-border bg-ops-surface">
+        <div className="grid grid-cols-[100px_1fr_180px_100px_90px] gap-0 border-b border-ops-border bg-ops-surface">
           {['METHOD', 'ENDPOINT PATH', 'SOURCE FILE', 'STATUS', 'ACTION'].map(h => (
             <div key={h} className="px-4 py-2.5 text-[9px] tracking-[0.2em] text-ops-dim font-display uppercase border-r border-ops-border last:border-r-0">
               {h}
@@ -100,7 +100,7 @@ export default function EndpointsTable({ endpoints, loading }: EndpointsTablePro
             return (
               <div
                 key={ep.id}
-                className="row-animate grid grid-cols-[80px_1fr_180px_100px_90px] gap-0 hover:bg-white/[0.02] transition-colors group"
+                className="row-animate grid grid-cols-[100px_1fr_180px_100px_90px] gap-0 hover:bg-white/[0.02] transition-colors group"
                 style={{ animationDelay: `${Math.min(i * 30, 300)}ms` }}
               >
                 {/* Method */}

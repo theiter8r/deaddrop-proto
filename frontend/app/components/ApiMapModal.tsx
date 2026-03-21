@@ -311,7 +311,7 @@ export default function ApiMapModal({ endpoints, onClose }: { endpoints: Endpoin
         </div>
 
         {/* Body */}
-        <div className="flex-1 overflow-hidden p-5">
+        <div className="flex-1 overflow-y-auto p-5">
           {view === 'tree'
             ? <TreeView root={root} collapsed={collapsed} onToggle={toggle} />
             : <TreemapView groups={groups} />
