@@ -1,0 +1,61 @@
+<h2>How should the API structure be visualized?</h2>
+<p class="subtitle">Pick the approach that best fits what you want to explore</p>
+
+<div class="options">
+
+  <div class="option" data-choice="tree" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Collapsible Path Tree</h3>
+      <p>Breaks endpoint paths into a nested filesystem-like tree. Each path segment is a node you can expand/collapse. Best for understanding hierarchy and navigating large APIs.</p>
+      <div style="margin-top:12px;background:#0a0f0a;border:1px solid #1a2a1a;border-radius:4px;padding:12px;font-family:monospace;font-size:11px;color:#4ade80;line-height:1.8">
+        <div>▼ /api</div>
+        <div style="padding-left:16px">▼ /v1</div>
+        <div style="padding-left:32px">▼ /users</div>
+        <div style="padding-left:48px;color:#86efac">● GET &nbsp;&nbsp;/users</div>
+        <div style="padding-left:48px;color:#fbbf24">● POST /users</div>
+        <div style="padding-left:48px">▼ /{id}</div>
+        <div style="padding-left:64px;color:#86efac">● GET &nbsp;&nbsp;/users/{id}</div>
+        <div style="padding-left:64px;color:#f87171">● DEL &nbsp;&nbsp;/users/{id}</div>
+        <div style="padding-left:16px">▼ /auth</div>
+        <div style="padding-left:32px;color:#fbbf24">● POST /auth/login</div>
+        <div style="padding-left:32px;color:#fbbf24">● POST /auth/logout</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="treemap" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Treemap (Area Chart)</h3>
+      <p>A rectangular heatmap where each block is an API group, sized by the number of endpoints it contains. Great for spotting which service areas are largest or most complex.</p>
+      <div style="margin-top:12px;display:grid;grid-template-columns:3fr 2fr 2fr;grid-template-rows:60px 40px;gap:2px;height:100px">
+        <div style="background:#166534;border:1px solid #4ade80;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#4ade80;font-family:monospace;grid-row:span 2">/api/v1/users<br><span style="font-size:9px;opacity:0.6">12 endpoints</span></div>
+        <div style="background:#1e3a5f;border:1px solid #60a5fa;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#60a5fa;font-family:monospace">/auth<br><span style="font-size:9px;opacity:0.6">5 endpoints</span></div>
+        <div style="background:#3b1f1f;border:1px solid #f87171;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#f87171;font-family:monospace">/admin<br><span style="font-size:9px;opacity:0.6">4 endpoints</span></div>
+        <div style="background:#2a2a0e;border:1px solid #fbbf24;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fbbf24;font-family:monospace">/health</div>
+        <div style="background:#1a1a2e;border:1px solid #a78bfa;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#a78bfa;font-family:monospace">/webhooks</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="both" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Both — Toggle Between Views</h3>
+      <p>Add a view switcher so users can flip between the tree hierarchy and the treemap. Tree for navigation depth, treemap for surface-area overview.</p>
+      <div style="margin-top:12px;display:flex;gap:6px">
+        <div style="flex:1;background:#0a0f0a;border:1px solid #4ade80;border-radius:4px;padding:8px;font-size:10px;color:#4ade80;font-family:monospace;text-align:center">
+          [ TREE VIEW ] &nbsp; TREEMAP
+        </div>
+      </div>
+      <div style="margin-top:6px;background:#0a0f0a;border:1px solid #1a2a1a;border-radius:4px;padding:8px;font-size:10px;color:#86efac;font-family:monospace">
+        ▼ /api/v1 · 18 endpoints<br>
+        &nbsp;&nbsp;▼ /users · 6<br>
+        &nbsp;&nbsp;▶ /auth · 5<br>
+        &nbsp;&nbsp;▶ /products · 7
+      </div>
+    </div>
+  </div>
+
+</div>

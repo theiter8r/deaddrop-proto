@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>API Map Modal Mockup</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0d1117; color: #c9d1d9; font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 13px; padding: 24px; }
+
+  .page-bg {
+    background: #0a0e0a;
+    border: 1px solid #1a2a1a;
+    border-radius: 6px;
+    padding: 16px;
+    opacity: 0.4;
+    margin-bottom: -200px;
+    position: relative;
+    z-index: 0;
+  }
+  .page-bg .bar { height: 10px; background: #1a2a1a; border-radius: 3px; margin-bottom: 8px; }
+  .page-bg .bar.short { width: 40%; }
+  .page-bg .table-row { height: 8px; background: #111811; border-radius: 2px; margin-bottom: 5px; }
+
+  /* Modal overlay */
+  .overlay {
+    position: relative;
+    z-index: 10;
+    background: rgba(0,0,0,0.75);
+    border-radius: 6px;
+    padding: 24px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+  }
+
+  .modal {
+    background: #0d1117;
+    border: 1px solid #30a14e55;
+    border-radius: 6px;
+    width: 100%;
+    max-width: 760px;
+    box-shadow: 0 0 40px #30a14e22;
+    overflow: hidden;
+  }
+
+  /* Modal header */
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid #1a2a1a;
+    background: #0a0e0a;
+  }
+  .modal-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .green-bar { width: 3px; height: 16px; background: #4ade80; box-shadow: 0 0 6px #4ade8088; border-radius: 1px; }
+  .title-text { font-size: 10px; letter-spacing: 0.25em; color: #4ade80; text-transform: uppercase; }
+  .dim { color: #4a5568; font-size: 9px; letter-spacing: 0.15em; }
+
+  /* View toggle */
+  .toggle-group {
+    display: flex;
+    gap: 2px;
+    background: #0a0e0a;
+    border: 1px solid #1a2a1a;
+    border-radius: 3px;
+    padding: 2px;
+  }
+  .toggle-btn {
+    padding: 4px 12px;
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    border-radius: 2px;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    text-transform: uppercase;
+  }
+  .toggle-btn.active {
+    background: #4ade8022;
+    color: #4ade80;
+    border: 1px solid #4ade8044;
+  }
+  .toggle-btn.inactive {
+    background: transparent;
+    color: #4a5568;
+    border: 1px solid transparent;
+  }
+
+  .close-btn {
+    background: none;
+    border: 1px solid #1a2a1a;
+    color: #4a5568;
+    font-size: 12px;
+    width: 24px; height: 24px;
+    border-radius: 3px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-family: inherit;
+  }
+
+  /* Modal body */
+  .modal-body { display: flex; height: 420px; }
+
+  /* === TREE VIEW === */
+  .tree-panel {
+    flex: 1;
+    padding: 16px;
+    overflow-y: auto;
+    border-right: 1px solid #1a2a1a;
+  }
+  .tree-node { margin-bottom: 1px; }
+  .tree-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 6px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: background 0.1s;
+  }
+  .tree-row:hover { background: #ffffff08; }
+  .tree-toggle { color: #4a5568; font-size: 10px; width: 10px; }
+  .tree-segment { color: #c9d1d9; font-size: 11px; }
+  .tree-segment.dim-seg { color: #4a5568; }
+  .tree-count {
+    margin-left: auto;
+    font-size: 9px;
+    color: #4a5568;
+    letter-spacing: 0.1em;
+    background: #1a2a1a;
+    padding: 1px 6px;
+    border-radius: 2px;
+  }
+  .method-chip {
+    font-size: 8px;
+    padding: 1px 5px;
+    border-radius: 2px;
+    letter-spacing: 0.1em;
+    font-weight: bold;
+  }
+  .get { background: #1e3a5f; color: #60a5fa; }
+  .post { background: #14532d; color: #4ade80; }
+  .put { background: #2a2a0e; color: #fbbf24; }
+  .del { background: #3b1f1f; color: #f87171; }
+  .patch { background: #1f2a3b; color: #a78bfa; }
+
+  .tree-leaf .tree-row { padding-left: 12px; }
+  .tree-children { padding-left: 20px; border-left: 1px solid #1a2a1a; margin-left: 11px; }
+
+  /* === TREEMAP VIEW === */
+  .treemap-panel {
+    flex: 1;
+    padding: 16px;
+    display: none;
+  }
+  .treemap-panel.visible { display: flex; flex-direction: column; gap: 10px; }
+  .tm-label { font-size: 9px; letter-spacing: 0.2em; color: #4a5568; text-transform: uppercase; margin-bottom: 8px; }
+  .treemap-grid {
+    display: grid;
+    grid-template-columns: 3fr 2fr;
+    grid-template-rows: 130px 90px 80px;
+    gap: 4px;
+    flex: 1;
+  }
+  .tm-cell {
+    border-radius: 4px;
+    border: 1px solid;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    cursor: default;
+    transition: filter 0.15s;
+    position: relative;
+    overflow: hidden;
+  }
+  .tm-cell:hover { filter: brightness(1.2); }
+  .tm-cell.green  { background: #0d2e1a; border-color: #4ade8044; }
+  .tm-cell.blue   { background: #0d1f35; border-color: #60a5fa44; }
+  .tm-cell.red    { background: #2a0d0d; border-color: #f8717144; }
+  .tm-cell.amber  { background: #2a1e0d; border-color: #fbbf2444; }
+  .tm-cell.purple { background: #1a0d2a; border-color: #a78bfa44; }
+  .tm-path { font-size: 10px; letter-spacing: 0.08em; }
+  .tm-cell.green .tm-path  { color: #4ade80; }
+  .tm-cell.blue .tm-path   { color: #60a5fa; }
+  .tm-cell.red .tm-path    { color: #f87171; }
+  .tm-cell.amber .tm-path  { color: #fbbf24; }
+  .tm-cell.purple .tm-path { color: #a78bfa; }
+  .tm-meta { display: flex; align-items: center; justify-content: space-between; }
+  .tm-count { font-size: 18px; opacity: 0.3; font-weight: bold; }
+  .tm-methods { display: flex; gap: 3px; flex-wrap: wrap; }
+  .tm-cell.span2 { grid-column: span 2; }
+
+  /* Stats bar */
+  .modal-footer {
+    border-top: 1px solid #1a2a1a;
+    padding: 8px 16px;
+    display: flex;
+    gap: 20px;
+    background: #0a0e0a;
+  }
+  .stat { display: flex; align-items: center; gap: 6px; }
+  .stat-dot { width: 6px; height: 6px; border-radius: 50%; }
+  .stat-label { font-size: 9px; letter-spacing: 0.15em; color: #4a5568; }
+  .stat-val { font-size: 9px; letter-spacing: 0.1em; }
+</style>
+</head>
+<body>
+
+<!-- Blurred background (simulates the dashboard behind the modal) -->
+<div class="page-bg">
+  <div class="bar short"></div>
+  <div class="bar"></div>
+  <div class="table-row"></div>
+  <div class="table-row"></div>
+  <div class="table-row"></div>
+  <div class="table-row"></div>
+</div>
+
+<!-- Modal overlay -->
+<div class="overlay">
+  <div class="modal">
+
+    <!-- Header -->
+    <div class="modal-header">
+      <div class="modal-title">
+        <div class="green-bar"></div>
+        <span class="title-text">API Structure Map</span>
+        <span class="dim">// 24 ENDPOINTS · 6 GROUPS</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <!-- Toggle -->
+        <div class="toggle-group" id="toggleGroup">
+          <button class="toggle-btn active" id="btnTree" onclick="switchView('tree')">⊞ TREE</button>
+          <button class="toggle-btn inactive" id="btnMap" onclick="switchView('map')">▦ TREEMAP</button>
+        </div>
+        <button class="close-btn">✕</button>
+      </div>
+    </div>
+
+    <!-- Body -->
+    <div class="modal-body">
+
+      <!-- Tree View -->
+      <div class="tree-panel" id="treePanel">
+        <!-- /api -->
+        <div class="tree-node">
+          <div class="tree-row">
+            <span class="tree-toggle">▼</span>
+            <span class="tree-segment">/api</span>
+            <span class="tree-count">24</span>
+          </div>
+          <div class="tree-children">
+
+            <!-- /v1 -->
+            <div class="tree-node">
+              <div class="tree-row">
+                <span class="tree-toggle">▼</span>
+                <span class="tree-segment">/v1</span>
+                <span class="tree-count">20</span>
+              </div>
+              <div class="tree-children">
+
+                <!-- /users -->
+                <div class="tree-node">
+                  <div class="tree-row">
+                    <span class="tree-toggle">▼</span>
+                    <span class="tree-segment">/users</span>
+                    <span class="tree-count">6</span>
+                  </div>
+                  <div class="tree-children">
+                    <div class="tree-node tree-leaf">
+                      <div class="tree-row">
+                        <span class="tree-toggle"></span>
+                        <span class="method-chip get">GET</span>
+                        <span class="tree-segment dim-seg">/users</span>
+                      </div>
+                    </div>
+                    <div class="tree-node tree-leaf">
+                      <div class="tree-row">
+                        <span class="tree-toggle"></span>
+                        <span class="method-chip post">POST</span>
+                        <span class="tree-segment dim-seg">/users</span>
+                      </div>
+                    </div>
+                    <div class="tree-node">
+                      <div class="tree-row">
+                        <span class="tree-toggle">▼</span>
+                        <span class="tree-segment">/{id}</span>
+                        <span class="tree-count">4</span>
+                      </div>
+                      <div class="tree-children">
+                        <div class="tree-node tree-leaf"><div class="tree-row"><span class="tree-toggle"></span><span class="method-chip get">GET</span><span class="tree-segment dim-seg">/{id}</span></div></div>
+                        <div class="tree-node tree-leaf"><div class="tree-row"><span class="tree-toggle"></span><span class="method-chip put">PUT</span><span class="tree-segment dim-seg">/{id}</span></div></div>
+                        <div class="tree-node tree-leaf"><div class="tree-row"><span class="tree-toggle"></span><span class="method-chip patch">PATCH</span><span class="tree-segment dim-seg">/{id}</span></div></div>
+                        <div class="tree-node tree-leaf"><div class="tree-row"><span class="tree-toggle"></span><span class="method-chip del">DEL</span><span class="tree-segment dim-seg">/{id}</span></div></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- /auth -->
+                <div class="tree-node">
+                  <div class="tree-row">
+                    <span class="tree-toggle">▶</span>
+                    <span class="tree-segment">/auth</span>
+                    <span class="tree-count">5</span>
+                  </div>
+                </div>
+
+                <!-- /products -->
+                <div class="tree-node">
+                  <div class="tree-row">
+                    <span class="tree-toggle">▶</span>
+                    <span class="tree-segment">/products</span>
+                    <span class="tree-count">7</span>
+                  </div>
+                </div>
+
+                <!-- /orders -->
+                <div class="tree-node">
+                  <div class="tree-row">
+                    <span class="tree-toggle">▶</span>
+                    <span class="tree-segment">/orders</span>
+                    <span class="tree-count">2</span>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+            <!-- /health -->
+            <div class="tree-node">
+              <div class="tree-row">
+                <span class="tree-toggle"></span>
+                <span class="method-chip get">GET</span>
+                <span class="tree-segment dim-seg">/health</span>
+              </div>
+            </div>
+
+            <!-- /webhooks -->
+            <div class="tree-node">
+              <div class="tree-row">
+                <span class="tree-toggle">▶</span>
+                <span class="tree-segment">/webhooks</span>
+                <span class="tree-count">3</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- Treemap View (hidden by default) -->
+      <div class="treemap-panel" id="treemapPanel">
+        <div class="tm-label">Top-level path groups · sized by endpoint count</div>
+        <div class="treemap-grid">
+          <div class="tm-cell green" style="grid-row:span 2">
+            <div>
+              <div class="tm-path">/api/v1/products</div>
+              <div style="font-size:9px;color:#4a5568;margin-top:3px">openapi.yaml</div>
+            </div>
+            <div class="tm-meta">
+              <div class="tm-count">7</div>
+              <div class="tm-methods">
+                <span class="method-chip get">GET</span>
+                <span class="method-chip post">POST</span>
+                <span class="method-chip put">PUT</span>
+                <span class="method-chip del">DEL</span>
+              </div>
+            </div>
+          </div>
+          <div class="tm-cell blue">
+            <div class="tm-path">/api/v1/users</div>
+            <div class="tm-meta">
+              <div class="tm-count">6</div>
+              <div class="tm-methods"><span class="method-chip get">GET</span><span class="method-chip post">POST</span></div>
+            </div>
+          </div>
+          <div class="tm-cell amber">
+            <div class="tm-path">/api/v1/auth</div>
+            <div class="tm-meta">
+              <div class="tm-count">5</div>
+              <div class="tm-methods"><span class="method-chip post">POST</span></div>
+            </div>
+          </div>
+          <div class="tm-cell red">
+            <div class="tm-path">/api/v1/orders</div>
+            <div class="tm-meta">
+              <div class="tm-count">2</div>
+              <div class="tm-methods"><span class="method-chip get">GET</span></div>
+            </div>
+          </div>
+          <div class="tm-cell purple span2">
+            <div class="tm-path">/api/webhooks &nbsp;<span style="font-size:9px;opacity:0.5">· /api/health</span></div>
+            <div class="tm-meta">
+              <div class="tm-count">4</div>
+              <div class="tm-methods"><span class="method-chip get">GET</span><span class="method-chip post">POST</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer stats -->
+    <div class="modal-footer">
+      <div class="stat">
+        <div class="stat-dot" style="background:#4ade80"></div>
+        <span class="stat-label">ACTIVE</span>
+        <span class="stat-val" style="color:#4ade80">20</span>
+      </div>
+      <div class="stat">
+        <div class="stat-dot" style="background:#f87171"></div>
+        <span class="stat-label">ZOMBIE</span>
+        <span class="stat-val" style="color:#f87171">4</span>
+      </div>
+      <div class="stat">
+        <div class="stat-dot" style="background:#fbbf24"></div>
+        <span class="stat-label">SHADOW</span>
+        <span class="stat-val" style="color:#fbbf24">0</span>
+      </div>
+      <div style="margin-left:auto;display:flex;align-items:center">
+        <span class="stat-label">SOURCE FILES&nbsp;</span>
+        <span class="stat-val" style="color:#c9d1d9">3</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+function switchView(view) {
+  const treePanel = document.getElementById('treePanel');
+  const treemapPanel = document.getElementById('treemapPanel');
+  const btnTree = document.getElementById('btnTree');
+  const btnMap = document.getElementById('btnMap');
+
+  if (view === 'tree') {
+    treePanel.style.display = 'block';
+    treemapPanel.classList.remove('visible');
+    btnTree.className = 'toggle-btn active';
+    btnMap.className = 'toggle-btn inactive';
+  } else {
+    treePanel.style.display = 'none';
+    treemapPanel.classList.add('visible');
+    btnTree.className = 'toggle-btn inactive';
+    btnMap.className = 'toggle-btn active';
+  }
+}
+</script>
+</body>
+</html>
