@@ -83,8 +83,8 @@ export default function GetStartedPage() {
         <div className="max-w-screen-lg mx-auto px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Link href="/" className="flex flex-col hover:opacity-80 transition-opacity">
-              <span className="font-display text-lg tracking-[0.25em] text-signal-green leading-none">DEADDROP</span>
-              <span className="text-[9px] tracking-[0.3em] text-ops-dim mt-0.5">API SECURITY OPERATIONS CENTER</span>
+              <span className="font-display text-lg tracking-[0.25em] text-signal-green leading-none">deaddrop</span>
+              <span className="text-[9px] tracking-[0.3em] text-ops-dim mt-0.5">NOTHING GETS THROUGH</span>
             </Link>
             <div className="h-8 w-px bg-ops-border" />
             <span className="text-[10px] tracking-widest text-ops-dim font-display">OPERATOR BRIEFING</span>
@@ -109,16 +109,16 @@ export default function GetStartedPage() {
             <h1 className="font-display text-2xl tracking-[0.2em] text-ops-text uppercase">Operator Briefing</h1>
           </div>
           <p className="text-sm text-ops-dim max-w-2xl leading-relaxed ml-4">
-            DeadDrop scans your code repositories for API specification files and maps every endpoint into a
+            deaddrop scans your code repositories for API specification files and maps every endpoint into a
             unified intelligence layer. This guide will get you operational in under five minutes.
           </p>
         </div>
 
-        {/* What DeadDrop Finds */}
+        {/* What deaddrop Finds */}
         <div className="mb-10 p-5 bg-ops-card border border-ops-border rounded-sm">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-1 h-5 bg-ops-border" />
-            <h2 className="font-display text-xs tracking-[0.2em] text-ops-dim uppercase">What DeadDrop Scans For</h2>
+            <h2 className="font-display text-xs tracking-[0.2em] text-ops-dim uppercase">What deaddrop Scans For</h2>
           </div>
           <div className="grid grid-cols-3 gap-3">
             {[
@@ -158,7 +158,7 @@ export default function GetStartedPage() {
           {provider === 'github' ? (
             <>
               <Step n={1} title="Create a GitHub Personal Access Token">
-                <p>DeadDrop needs read access to your repository contents to walk the file tree and download spec files.</p>
+                <p>deaddrop needs read access to your repository contents to walk the file tree and download spec files.</p>
                 <ol className="list-none space-y-2 mt-3">
                   {[
                     <>Go to <strong className="text-ops-text">github.com → Settings → Developer settings → Personal access tokens → Tokens (classic)</strong></>,
@@ -206,13 +206,13 @@ https://github.com/your-org/private-repo`}</Terminal>
     "repo_url": "https://github.com/your-org/your-repo",
     "token": "ghp_xxxxxxxxxxxxxxxxxxxx"
   }'`}</Terminal>
-                <p>DeadDrop will walk the full file tree, find every matching spec file, parse all endpoints, and persist them to the database in a single operation.</p>
+                <p>deaddrop will walk the full file tree, find every matching spec file, parse all endpoints, and persist them to the database in a single operation.</p>
               </Step>
             </>
           ) : (
             <>
               <Step n={1} title="Create a GitLab Personal Access Token">
-                <p>DeadDrop needs read access to your repository to enumerate files and fetch their content.</p>
+                <p>deaddrop needs read access to your repository to enumerate files and fetch their content.</p>
                 <ol className="list-none space-y-2 mt-3">
                   {[
                     <>Go to <strong className="text-ops-text">gitlab.com → User Settings → Access Tokens</strong></>,
@@ -258,7 +258,7 @@ https://gitlab.com/your-group/subgroup/your-project`}</Terminal>
     "repo_url": "https://gitlab.com/your-group/your-project",
     "token": "glpat-xxxxxxxxxxxxxxxxxxxx"
   }'`}</Terminal>
-                <p>DeadDrop paginates the GitLab tree API automatically — large monorepos with hundreds of files are handled without manual configuration.</p>
+                <p>deaddrop paginates the GitLab tree API automatically — large monorepos with hundreds of files are handled without manual configuration.</p>
               </Step>
             </>
           )}
@@ -297,7 +297,7 @@ https://gitlab.com/your-group/subgroup/your-project`}</Terminal>
               ))}
             </div>
             <Callout type="info">
-              Re-scanning the same repository is safe — DeadDrop replaces previous results for those source files rather than duplicating them.
+              Re-scanning the same repository is safe — deaddrop replaces previous results for those source files rather than duplicating them.
             </Callout>
           </Step>
         </div>
@@ -322,7 +322,7 @@ https://gitlab.com/your-group/subgroup/your-project`}</Terminal>
 
       <footer className="border-t border-ops-border bg-ops-surface/40 py-3">
         <div className="max-w-screen-lg mx-auto px-6 flex items-center justify-between">
-          <span className="text-[9px] tracking-[0.25em] text-ops-dim font-display">DEADDROP PROTO // OPERATOR BRIEFING</span>
+          <span className="text-[9px] tracking-[0.25em] text-ops-dim font-display">deaddrop PROTO // OPERATOR BRIEFING</span>
           <span className="text-[9px] tracking-[0.2em] text-ops-faint font-display">CLASSIFICATION: INTERNAL</span>
         </div>
       </footer>

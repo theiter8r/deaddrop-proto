@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'DEADDROP // API Security Operations',
+  title: 'deaddrop // Nothing Gets Through',
   description: 'Automated API Security & Governance — Layer 4 Dashboard',
 }
 

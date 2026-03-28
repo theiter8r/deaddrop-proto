@@ -52,10 +52,10 @@ export default function DashboardPage() {
           <div className="flex items-center gap-4">
             <div className="flex flex-col">
               <span className="font-display text-lg tracking-[0.25em] text-signal-green leading-none">
-                DEADDROP
+                deaddrop
               </span>
               <span className="text-[9px] tracking-[0.3em] text-ops-dim mt-0.5">
-                API SECURITY OPERATIONS CENTER
+                NOTHING GETS THROUGH
               </span>
             </div>
             <div className="h-8 w-px bg-ops-border" />
@@ -191,7 +191,7 @@ export default function DashboardPage() {
       <footer className="border-t border-ops-border bg-ops-surface/40 py-3">
         <div className="max-w-screen-xl mx-auto px-6 flex items-center justify-between">
           <span className="text-[9px] tracking-[0.25em] text-ops-dim font-display">
-            DEADDROP PROTO // LAYER 1 + LAYER 4
+            deaddrop PROTO // LAYER 1 + LAYER 4
           </span>
           <span className="text-[9px] tracking-[0.2em] text-ops-faint font-display">
             CLASSIFICATION: INTERNAL

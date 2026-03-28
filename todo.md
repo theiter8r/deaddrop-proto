@@ -1,4 +1,4 @@
-# DeadDrop Proto — Static Scanner: Task Ledger
+# deaddrop Proto — Static Scanner: Task Ledger
 
 ## Sprint: Layer 1 — Static Scanner Backend
 

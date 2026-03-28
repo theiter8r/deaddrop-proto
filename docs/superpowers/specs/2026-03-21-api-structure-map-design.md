@@ -6,7 +6,7 @@
 
 ## Overview
 
-Add an "API Structure Map" modal to the DEADDROP dashboard. It visualizes all discovered endpoints as a hierarchical structure, giving users two complementary views toggled by a button: a collapsible path tree and a treemap (area chart). The modal is triggered by a button in the existing dashboard UI and does not replace the endpoints table.
+Add an "API Structure Map" modal to the deaddrop dashboard. It visualizes all discovered endpoints as a hierarchical structure, giving users two complementary views toggled by a button: a collapsible path tree and a treemap (area chart). The modal is triggered by a button in the existing dashboard UI and does not replace the endpoints table.
 
 ---
 

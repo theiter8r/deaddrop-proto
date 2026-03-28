@@ -1,5 +1,5 @@
 """
-Shared pytest fixtures for the DeadDrop Static Scanner test suite.
+Shared pytest fixtures for the deaddrop Static Scanner test suite.
 Uses an in-memory SQLite database so no real Postgres is needed locally.
 """
 import os
